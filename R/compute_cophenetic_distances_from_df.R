@@ -2,39 +2,47 @@ compute_cophenetic_distances_from_df <- function(df,
                                                  cluster_col = "Cluster",
                                                  x_col = "x",
                                                  y_col = "y",
-                                                 method = "average") {
-  # 检查必要列是否存在
+                                                 method = "average",
+                                                 print = FALSE) {
+  # Check that the required columns exist
   if (!cluster_col %in% colnames(df)) {
-    stop(sprintf("列 '%s' 不存在于数据框中，请检查输入数据。", cluster_col))
+    stop(sprintf("Column '%s' does not exist in the data frame. Please check your input.",
+                 cluster_col))
   }
   if (!all(c(x_col, y_col) %in% colnames(df))) {
-    stop(sprintf("数据框必须包含 '%s' 和 '%s' 两列用于构成坐标。", x_col, y_col))
+    stop(sprintf("Data frame must contain both '%s' and '%s' columns for coordinates.",
+                 x_col, y_col))
   }
 
-  # 如果没有 cell_id 列，则使用行号作为 cell_id
+  # Use 'cell_id' column if present; otherwise, use row numbers
   if ("cell_id" %in% colnames(df)) {
     cell_ids <- as.character(df$cell_id)
   } else {
     cell_ids <- as.character(1:nrow(df))
   }
 
-  # 将 cluster 列转换为因子，并获取唯一分组
+  # Convert the cluster column to factor and get unique levels
   clusters <- as.factor(df[[cluster_col]])
   unique_clusters <- levels(clusters)
 
-  # 提取坐标矩阵，根据参数指定列名
+  # Extract the coordinate matrix using the specified column names
   coords <- as.matrix(df[, c(x_col, y_col)])
 
-  # 初始化存储最近邻距离的矩阵，行：cell_ids，列：unique_clusters
-  df_nearest_cluster_dist <- matrix(NA, nrow = nrow(df), ncol = length(unique_clusters),
-                                    dimnames = list(cell_ids, unique_clusters))
+  # Initialize a matrix to store nearest-neighbor distances:
+  # rows = cell_ids, cols = unique_clusters
+  df_nearest_cluster_dist <- matrix(
+    NA,
+    nrow = nrow(df),
+    ncol = length(unique_clusters),
+    dimnames = list(cell_ids, unique_clusters)
+  )
 
-  # 加载 RANN 包用于最近邻搜索
+  # Load RANN package for nearest-neighbor search
   if (!requireNamespace("RANN", quietly = TRUE)) {
-    stop("需要安装 'RANN' 包，请先安装该包。")
+    stop("The 'RANN' package is required but not installed. Please install it first.")
   }
 
-  # 对每个分组计算所有细胞到该分组中最近细胞的距离
+  # For each cluster, compute distance from every cell to its nearest cell in that cluster
   for (c in unique_clusters) {
     mask_c <- clusters == c
     coords_c <- coords[mask_c, , drop = FALSE]
@@ -47,55 +55,70 @@ compute_cophenetic_distances_from_df <- function(df,
     }
   }
 
-  # 将最近邻距离矩阵转换为 data frame，并添加细胞所属分组信息
+  # Convert the nearest-neighbor distance matrix to a data frame
+  # and add a column for each cell's cluster
   df_nearest_cluster_dist_df <- as.data.frame(df_nearest_cluster_dist)
   df_nearest_cluster_dist_df$cell_cluster <- clusters
 
-  # 对每个细胞分组，计算各分组距离的均值
-  df_group_mean <- aggregate(. ~ cell_cluster,
-                             data = df_nearest_cluster_dist_df,
-                             FUN = mean, na.rm = TRUE)
+  # Compute the mean distance to each cluster for each cell cluster
+  df_group_mean <- aggregate(
+    . ~ cell_cluster,
+    data = df_nearest_cluster_dist_df,
+    FUN = mean,
+    na.rm = TRUE
+  )
   rownames(df_group_mean) <- df_group_mean$cell_cluster
   df_group_mean$cell_cluster <- NULL
 
-  # 删除整列均为 NA 的分组
-  df_group_mean_clean <- df_group_mean[, colSums(is.na(df_group_mean)) < nrow(df_group_mean), drop = FALSE]
+  # Remove any cluster columns that are all NA
+  df_group_mean_clean <- df_group_mean[,
+    colSums(is.na(df_group_mean)) < nrow(df_group_mean),
+    drop = FALSE
+  ]
   if (ncol(df_group_mean_clean) == 0) {
-    warning("df_group_mean_clean 为空，请检查数据。")
-    return(list(row_cophenetic_df = data.frame(),
-                col_cophenetic_df = data.frame()))
+    warning("df_group_mean_clean is empty. Please check your data.")
+    return(list(
+      row_cophenetic_df = data.frame(),
+      col_cophenetic_df = data.frame()
+    ))
   }
 
-  # 对行和列分别进行层次聚类
+  # Perform hierarchical clustering on rows and columns
   row_linkage <- hclust(dist(df_group_mean_clean), method = method)
   col_linkage <- hclust(dist(t(df_group_mean_clean)), method = method)
 
-  # 计算 cophenetic 距离矩阵
+  # Compute cophenetic distance matrices
   row_cophenetic <- cophenetic(row_linkage)
   col_cophenetic <- cophenetic(col_linkage)
 
-  # 定义归一化函数
+  # Normalization helper function
   normalize_matrix <- function(mat) {
     dmin <- min(mat, na.rm = TRUE)
     dmax <- max(mat, na.rm = TRUE)
-    if (dmin == dmax) {
-      return(mat)
-    }
+    if (dmin == dmax) return(mat)
     (mat - dmin) / (dmax - dmin)
   }
 
   row_cophenetic_norm <- normalize_matrix(row_cophenetic)
   col_cophenetic_norm <- normalize_matrix(col_cophenetic)
 
-  # 输出距离范围信息
-  cat(sprintf("行方向 cophenetic 距离：原始范围 [%.4f, %.4f]，归一化后范围 [%.4f, %.4f]\n",
-              min(row_cophenetic), max(row_cophenetic),
-              min(row_cophenetic_norm), max(row_cophenetic_norm)))
-  cat(sprintf("列方向 cophenetic 距离：原始范围 [%.4f, %.4f]，归一化后范围 [%.4f, %.4f]\n",
-              min(col_cophenetic), max(col_cophenetic),
-              min(col_cophenetic_norm), max(col_cophenetic_norm)))
+  if (print == TRUE) {
+    # Print distance range information
+    cat(sprintf(
+      "Row cophenetic distances: original range [%.4f, %.4f], normalized range [%.4f, %.4f]\n",
+      min(row_cophenetic), max(row_cophenetic),
+      min(row_cophenetic_norm), max(row_cophenetic_norm)
+    ))
+    cat(sprintf(
+      "Column cophenetic distances: original range [%.4f, %.4f], normalized range [%.4f, %.4f]\n",
+      min(col_cophenetic), max(col_cophenetic),
+      min(col_cophenetic_norm), max(col_cophenetic_norm)
+    ))
+  }
 
-  # 返回归一化后的 cophenetic 距离矩阵（行、列分别）
-  return(list(row_cophenetic_df = row_cophenetic_norm,
-              col_cophenetic_df = col_cophenetic_norm))
+  # Return the normalized cophenetic distance matrices
+  return(list(
+    row_cophenetic_df = row_cophenetic_norm,
+    col_cophenetic_df = col_cophenetic_norm
+  ))
 }
