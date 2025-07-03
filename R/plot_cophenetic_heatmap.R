@@ -1,19 +1,20 @@
 plot_cophenetic_heatmap <- function(matrix,
-                                    matrix_name = NULL,   # 用于区分 "row_coph" 和 "col_coph"
+                                    matrix_name = NULL,   # used to distinguish "row_coph" and "col_coph"
                                     output_dir = NULL,
                                     output_filename = NULL,
                                     figsize = c(9, 9),
                                     cellwidth = 11,
                                     cmap = "RdBu",
-                                    linewidths = 0.5,     # pheatmap 中无法直接设置单元格边框宽度
+                                    linewidths = 0.5,     # pheatmap does not allow setting cell border width directly
                                     annot = TRUE,
                                     sample = "Sample",
                                     xlabel = NULL,
                                     ylabel = NULL,
                                     show_dendrogram = TRUE,
-                                    return_xlabels = FALSE) {   # 新增参数
+                                    return_xlabels = FALSE,
+                                    parse_label = FALSE) {   # new parameter
 
-  # 1) 设置输出目录
+  # 1) Set output directory
   if (is.null(output_dir)) {
     output_dir <- getwd()
   }
@@ -21,7 +22,7 @@ plot_cophenetic_heatmap <- function(matrix,
     dir.create(output_dir, recursive = TRUE)
   }
 
-  # 根据 matrix_name 设置标题、默认文件名以及轴标签
+  # Set title, default filename, and axis labels based on matrix_name
   if (!is.null(matrix_name) && matrix_name == "row_coph") {
     title_str <- paste("Searcher's D score of", sample)
     default_filename <- paste0("Searcher's D score_of_", sample, ".pdf")
@@ -43,34 +44,39 @@ plot_cophenetic_heatmap <- function(matrix,
     }
   }
 
-  # 如果未指定输出文件名，则使用默认文件名
+  # If output_filename is not specified, use default
   if (is.null(output_filename)) {
     output_filename <- default_filename
   }
   output_file <- file.path(output_dir, output_filename)
 
-  # 根据 show_dendrogram 参数确定是否进行聚类
+  # Determine clustering based on show_dendrogram
   cluster_rows <- show_dendrogram
   cluster_cols <- show_dendrogram
 
-  # 设置颜色调色板，默认为 RdBu（需依赖 RColorBrewer 包）
+  # Set color palette, default RdBu (requires RColorBrewer)
   if (cmap == "RdBu") {
     if (!requireNamespace("RColorBrewer", quietly = TRUE)) {
-      stop("请先安装 RColorBrewer 包")
+      stop("Please install the RColorBrewer package first")
     }
     my_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(100)
   } else {
-    # 若使用其它调色板，可自行调整
+    # If using other palettes, adjust manually
     my_palette <- colorRampPalette(colors = c("blue", "white", "red"))(100)
   }
 
-  label_parse <- function(breaks) {
-    parse(text = latex2exp::TeX(breaks))
+  if(parse_label == TRUE) {
+    label_parse <- function(breaks) {
+      parse(text = latex2exp::TeX(breaks))
+    }
+    row_labels <- label_parse(rownames(matrix))
+    col_labels <- label_parse(colnames(matrix))
+  } else {
+    row_labels <- rownames(matrix)
+    col_labels <- colnames(matrix)
   }
-  row_labels <- label_parse(rownames(matrix))
-  col_labels <- label_parse(colnames(matrix))
 
-  # 打开 PDF 设备，注意 pheatmap 的 width/height 参数默认以英寸为单位
+  # Open PDF device; note pheatmap width/height are in inches
   library(showtext)
   font_add_google("Roboto Mono", "roboto mono")
   showtext_auto()
@@ -89,14 +95,14 @@ plot_cophenetic_heatmap <- function(matrix,
                           labels_row = row_labels,
                           labels_col = col_labels,
                           main = title_str,
-                          cellwidth = cellwidth,    # 根据需要调整单元格宽度（单位：像素）
-                          cellheight = cellwidth)   # 根据需要调整单元格高度（单位：像素）
+                          cellwidth = cellwidth,    # adjust cell width as needed (pixels)
+                          cellheight = cellwidth)   # adjust cell height as needed (pixels)
   print(p)
   dev.off()
 
-  # 如果要求返回 x 轴标签，提取标签并关闭设备后返回
+  # If return_xlabels is TRUE, extract x-axis labels and return after closing device
   if(return_xlabels) {
-    # 这里假设 x 轴标签存储在名为 "col_labels" 的 grob 中
+    # Here assuming x-axis labels are stored in a grob named "col_names"
     x_labels_grob <- p$gtable$grobs[[which(p$gtable$layout$name == "col_names")]]
     x_labels <- x_labels_grob$label
     return(x_labels)
