@@ -81,6 +81,11 @@ plot_cophenetic_heatmap <- function(matrix,
   font_add_google("Roboto Mono", "roboto mono")
   showtext_auto()
 
+  # —— 在 cairo_pdf() 之前，先关闭所有已打开的设备 —— #
+  while (!is.null(dev.list())) {
+    dev.off()
+  }
+
   cairo_pdf(file = output_file, width = figsize[1], height = figsize[2], family = "roboto mono")
   p <- pheatmap::pheatmap(matrix,
                           clustering_method = "average",
