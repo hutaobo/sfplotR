@@ -15,3 +15,5 @@ Imports:
 LazyData: true
 URL: https://github.com/you/sfplotR
 BugReports: https://github.com/you/sfplotR/issues
+Depends:  
+    R (>= 4.3)
