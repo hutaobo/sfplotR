@@ -1,0 +1,17 @@
+Package: sfplotR
+Type: Package
+Title: Spatial Feature Plotting for Spatial Transcriptomics Data
+Version: 0.1.0
+Authors@R: 
+    person("Tao", "Hu", email = "taobo.hu@scilifelab.se", role = c("aut", "cre"))
+Description: Provides functions to compute structure scores and generate spatial feature plots for single-cell spatial transcriptomics datasets.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports:
+    cluster,
+    ggplot2,
+    sf,
+    shiny
+LazyData: true
+URL: https://github.com/you/sfplotR
+BugReports: https://github.com/you/sfplotR/issues
