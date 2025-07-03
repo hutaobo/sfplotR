@@ -23,16 +23,6 @@ suppressPackageStartupMessages({
   library(tools)
 })
 
-# Source the provided utility functions
-# Make sure these files are in the same directory as this script, or provide the full path.
-tryCatch({
-  source("compute_cluster_average_nn_distance_matrix.R")
-  source("compute_cophenetic_distances_from_df.R")
-  source("plot_cophenetic_heatmap.R")
-}, error = function(e) {
-  stop("Ensure all provided R source files are in the working directory. Error: ", e$message)
-})
-
 
 # --- 2. WORKER FUNCTION ---
 
