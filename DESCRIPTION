@@ -10,7 +10,6 @@ Depends:
 Imports:
     cluster,
     ggplot2,
-    sf,
     shiny
 License: MIT + file LICENSE
 Encoding: UTF-8
