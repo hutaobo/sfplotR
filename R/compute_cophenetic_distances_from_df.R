@@ -118,7 +118,7 @@ compute_cophenetic_distances_from_df <- function(df,
 
   # Return the normalized cophenetic distance matrices
   return(list(
-    row_cophenetic_df = row_cophenetic_norm,
-    col_cophenetic_df = col_cophenetic_norm
+    row_cophenetic_df = as.matrix(row_cophenetic_norm),
+    col_cophenetic_df = as.matrix(col_cophenetic_norm)
   ))
 }
