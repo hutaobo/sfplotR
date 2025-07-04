@@ -117,11 +117,11 @@ transcript_by_cell_analysis <- function(cell_metadata,
                   n_jobs, length(genes)))
 
   handlers("progress")  # CLI 进度条
-  plan(future::multicore, workers = n_jobs)
-  on.exit(plan(sequential), add = TRUE)  # 运行结束后恢复单线程
+  future::plan("multicore", workers = n_jobs)
+  on.exit(future::plan("sequential"), add = TRUE)  # 运行结束后恢复单线程
 
   results_list <- with_progress({
-    p <- progressor(steps = length(genes))
+    p <- progressr::progressor(steps = length(genes))
 
     future_lapply(
       X   = genes,
