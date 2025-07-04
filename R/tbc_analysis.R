@@ -10,6 +10,8 @@ suppressPackageStartupMessages({
   library(tools)
   library(progressr)  # live progress bar
 })
+# 将上限设置为 6 GiB (6 * 1024^3 bytes)
+options(future.globals.maxSize = 100 * 1024^3)
 
 # --- 2. WORKER FUNCTION ------------------------------------------------------
 
@@ -22,7 +24,7 @@ process_gene <- function(gene,
   tryCatch({
     gene_coords <- coords_df[coords_df$feature_name == gene, ]
 
-    # ── Case 1: gene 没坐标 ────────────────────────────────────────────────
+    # ── Case 1: gene has no coordinates ──────────────────────────────────
     if (nrow(gene_coords) == 0) {
       if (!gene %in% rownames(celltype_coph_df)) {
         res <- as.data.frame(matrix(NA_real_,
@@ -37,7 +39,7 @@ process_gene <- function(gene,
       return(res)
     }
 
-    # ── Case 2: 重新计算 gene ↔︎ cell types ───────────────────────────────
+    # ── Case 2: Recalculate gene ↔︎ cell types distances ───────────────
     gene_coords_formatted <- data.frame(
       x        = gene_coords$x,
       y        = gene_coords$y,
@@ -84,13 +86,13 @@ transcript_by_cell_analysis <- function(cell_metadata,
 
   message("--- Loading and preparing data ---")
 
-  # ── 预处理 ────────────────────────────────────────────────────────────────
+  # ── Pre-processing ───────────────────────────────────────────────────
   coords <- coords[!grepl("NegControl|Unassigned",
                           coords$feature_name, ignore.case = TRUE), ]
   cell_metadata_clean <- cell_metadata[, c("x", "y", "celltype")]
   genes <- sort(unique(coords$feature_name))
 
-  # ── 计算 celltype↔︎celltype 基准距离 ──────────────────────────────────────
+  # ── Compute baseline celltype↔︎celltype distances ─────────────────────
   message("--- Computing initial cell-type StructureMap ---")
   celltype_coph <- compute_cophenetic_distances_from_df(
     df          = cell_metadata_clean,
@@ -107,29 +109,34 @@ transcript_by_cell_analysis <- function(cell_metadata,
     output_filename = paste0("StructureMap_of_", sample_name, ".pdf"),
     sample          = sample_name
   )
+
   write.csv(celltype_coph,
             file.path(output_folder,
                       paste0("StructureMap_table_", sample_name, ".csv")),
             row.names = TRUE)
 
-  # ── 并行处理各基因 ───────────────────────────────────────────────────────
+  # ── Process each gene in parallel ─────────────────────────────────────
   message(sprintf("--- Forking %d workers to process %d genes ---",
                   n_jobs, length(genes)))
 
-  handlers("progress")  # CLI 进度条
+  handlers("progress")  # CLI progress bar
   future::plan("multicore", workers = n_jobs)
-  on.exit(future::plan("sequential"), add = TRUE)  # 运行结束后恢复单线程
+  on.exit(future::plan("sequential"), add = TRUE)  # Restore sequential processing on exit
 
   results_list <- with_progress({
     p <- progressr::progressor(steps = length(genes))
 
+    # --- START: MODIFIED SECTION ---
+    # The key change is to use `future.globals` to explicitly pass large
+    # objects and other necessary functions/variables to the workers.
+    # This prevents `future` from bundling the large data inside the
+    # function's environment, thus avoiding the size limit error.
     future.apply::future_lapply(
       X   = genes,
-      FUN = function(gene,
-                     coords_df,
-                     cell_metadata_df,
-                     celltype_coph_df,
-                     coph_method) {
+      FUN = function(gene) {
+        # This function now only takes 'gene' as a direct argument.
+        # All other variables (`p`, `process_gene`, `coords_df`, etc.)
+        # are found in the global environment of the worker process.
         p(sprintf("Processed %s", gene))
         process_gene(gene,
                      coords_df,
@@ -137,16 +144,21 @@ transcript_by_cell_analysis <- function(cell_metadata,
                      celltype_coph_df,
                      coph_method)
       },
-      coords_df        = coords,
-      cell_metadata_df = cell_metadata_clean,
-      celltype_coph_df = celltype_coph,
-      coph_method      = coph_method,
-      future.seed      = TRUE   # reproducible RNG per worker
+      future.seed      = TRUE,
+      future.globals   = list(
+          p = p,
+          process_gene = process_gene,
+          coords_df = coords,
+          cell_metadata_df = cell_metadata_clean,
+          celltype_coph_df = celltype_coph,
+          coph_method = coph_method
+      )
     )
+    # --- END: MODIFIED SECTION ---
   })
   names(results_list) <- genes
 
-  # ── 汇总并保存 ────────────────────────────────────────────────────────────
+  # ── Combine and save results ──────────────────────────────────────────
   message("--- Combining and saving final results ---")
   results_list <- results_list[!sapply(results_list, is.null)]
 
