@@ -116,7 +116,7 @@ transcript_by_cell_analysis <- function(cell_metadata,
   message(sprintf("--- Forking %d workers to process %d genes ---",
                   n_jobs, length(genes)))
 
-  handlers("txt")  # CLI 进度条
+  handlers("progress")  # CLI 进度条
   plan(multicore, workers = n_jobs)
   on.exit(plan(sequential), add = TRUE)  # 运行结束后恢复单线程
 
