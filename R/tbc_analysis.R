@@ -151,7 +151,7 @@ transcript_by_cell_analysis <- function(cell_metadata,
   results_list <- results_list[!sapply(results_list, is.null)]
 
   final_df <- data.table::rbindlist(results_list, idcol = "gene")
-  setDF(final_df)
+  data.table::setDF(final_df)
   rownames(final_df) <- final_df$gene
   final_df$gene <- NULL
 

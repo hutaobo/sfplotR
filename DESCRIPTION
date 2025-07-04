@@ -14,7 +14,8 @@ Imports:
     shiny,
     future,
     future.apply,
-    progressr
+    progressr,
+    data.table
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
