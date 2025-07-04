@@ -123,7 +123,7 @@ transcript_by_cell_analysis <- function(cell_metadata,
   results_list <- with_progress({
     p <- progressr::progressor(steps = length(genes))
 
-    future_lapply(
+    future.apply::future_lapply(
       X   = genes,
       FUN = function(gene,
                      coords_df,
