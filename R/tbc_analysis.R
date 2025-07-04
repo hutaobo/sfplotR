@@ -160,12 +160,9 @@ transcript_by_cell_analysis <- function(cell_metadata,
 
   # ── Combine and save results ──────────────────────────────────────────
   message("--- Combining and saving final results ---")
-  results_list <- results_list[!sapply(results_list, is.null)]
-
-  final_df <- data.table::rbindlist(results_list, idcol = "gene")
-  data.table::setDF(final_df)
-  rownames(final_df) <- final_df$gene
-  final_df$gene <- NULL
+  results_list <- Filter(Negate(is.null), results_list)
+  final_df <- do.call(rbind, results_list) |>  # 拼成大矩阵
+              as.data.frame()
 
   write.csv(final_df,
             file = file.path(output_folder,
