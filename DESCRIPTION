@@ -3,19 +3,32 @@ Type: Package
 Title: Spatial Feature Plotting for Spatial Transcriptomics Data
 Version: 0.1.0
 Authors@R: 
-    person("Tao", "Hu", email = "taobo.hu@scilifelab.se", role = c("aut", "cre"))
-Description: Provides functions to compute structure scores and generate spatial feature plots for single-cell spatial transcriptomics datasets.
+    c(
+        person("Taobo", "Hu", email = "taobo.hu@scilifelab.se", role = c("aut", "cre")),
+        person("Mengping", "Long", email = "mengping.long@scilifelab.se", role = "aut"),
+        person("Mats", "Nilsson", email = "mats.nilsson@scilifelab.se", role = "aut")
+    )
+Description: Provides functions to compute cophenetic structure scores and generate
+    spatial feature plots for spatial transcriptomics datasets, including reviewer-facing
+    workflows accompanying the sfplot / Cell-GPS manuscript.
 Depends:  
     R (>= 4.3)
 Imports:
     cluster,
-    ggplot2,
-    optparse,
-    shiny,
+    data.table,
+    dplyr,
     future,
     future.apply,
+    ggplot2,
+    optparse,
+    pheatmap,
     progressr,
-    data.table
+    RANN,
+    RColorBrewer,
+    shiny,
+    showtext
+Suggests:
+    latex2exp
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

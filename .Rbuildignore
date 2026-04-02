@@ -2,3 +2,6 @@
 ^\.Rproj\.user$
 ^^example$$
 ^^example/\.*$$
+^REVIEWER_GUIDE\.md$
+^GEOmetadb\.sqlite$
+^GEOmetadb\.sqlite\.gz$

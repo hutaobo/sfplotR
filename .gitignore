@@ -4,3 +4,5 @@
 .httr-oauth
 .DS_Store
 .quarto
+GEOmetadb.sqlite
+GEOmetadb.sqlite.gz
