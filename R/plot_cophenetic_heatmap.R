@@ -34,8 +34,8 @@ plot_cophenetic_heatmap <- function(matrix,
     xlabel <- "Findee"
     ylabel <- "Findee"
   } else {
-    title_str <- paste("SFplot of", sample)
-    default_filename <- paste0("SFplot of ", sample, ".pdf")
+    title_str <- paste("Cell-GPS heatmap of", sample)
+    default_filename <- paste0("Cell-GPS heatmap of ", sample, ".pdf")
     if (is.null(xlabel)) {
       xlabel <- "Findee"
     }
@@ -59,13 +59,16 @@ plot_cophenetic_heatmap <- function(matrix,
     if (!requireNamespace("RColorBrewer", quietly = TRUE)) {
       stop("Please install the RColorBrewer package first")
     }
-    my_palette <- colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(100)
+    my_palette <- grDevices::colorRampPalette(RColorBrewer::brewer.pal(11, "RdBu"))(100)
   } else {
     # If using other palettes, adjust manually
-    my_palette <- colorRampPalette(colors = c("blue", "white", "red"))(100)
+    my_palette <- grDevices::colorRampPalette(colors = c("blue", "white", "red"))(100)
   }
 
-  if(parse_label == TRUE) {
+  if (parse_label == TRUE) {
+    if (!requireNamespace("latex2exp", quietly = TRUE)) {
+      stop("The 'latex2exp' package is required when parse_label = TRUE.")
+    }
     label_parse <- function(breaks) {
       parse(text = latex2exp::TeX(breaks))
     }
@@ -76,17 +79,16 @@ plot_cophenetic_heatmap <- function(matrix,
     col_labels <- colnames(matrix)
   }
 
-  # Open PDF device; note pheatmap width/height are in inches
-  library(showtext)
-  font_add_google("Roboto Mono", "roboto mono")
-  showtext_auto()
+  # Open PDF device; note pheatmap width/height are in inches.
+  sysfonts::font_add_google("Roboto Mono", "roboto mono")
+  showtext::showtext_auto()
 
-  # —— 在 cairo_pdf() 之前，先关闭所有已打开的设备 —— #
-  while (!is.null(dev.list())) {
-    dev.off()
+  # Close open graphics devices before creating the output PDF.
+  while (!is.null(grDevices::dev.list())) {
+    grDevices::dev.off()
   }
 
-  cairo_pdf(file = output_file, width = figsize[1], height = figsize[2], family = "roboto mono")
+  grDevices::cairo_pdf(file = output_file, width = figsize[1], height = figsize[2], family = "roboto mono")
   p <- pheatmap::pheatmap(matrix,
                           clustering_method = "average",
                           clustering_distance_rows = "euclidean",
@@ -103,11 +105,11 @@ plot_cophenetic_heatmap <- function(matrix,
                           cellwidth = cellwidth,    # adjust cell width as needed (pixels)
                           cellheight = cellwidth)   # adjust cell height as needed (pixels)
   print(p)
-  dev.off()
+  grDevices::dev.off()
 
   # If return_xlabels is TRUE, extract x-axis labels and return after closing device
-  if(return_xlabels) {
-    # Here assuming x-axis labels are stored in a grob named "col_names"
+  if (return_xlabels) {
+    # Assume x-axis labels are stored in a grob named "col_names".
     x_labels_grob <- p$gtable$grobs[[which(p$gtable$layout$name == "col_names")]]
     x_labels <- x_labels_grob$label
     return(x_labels)

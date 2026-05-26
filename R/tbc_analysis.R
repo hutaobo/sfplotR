@@ -1,19 +1,7 @@
 #!/usr/bin/env Rscript
-# tbc_analysis.R — Transcript-by-cell spatial analysis (Linux-optimised)
+# Cell-GPS transcript-by-cell spatial analysis.
 
-# --- 1. SCRIPT SETUP ---------------------------------------------------------
-suppressPackageStartupMessages({
-  library(future)
-  library(future.apply)
-  library(dplyr)
-  library(data.table)
-  library(tools)
-  library(progressr)  # live progress bar
-})
-# 将上限设置为 6 GiB (6 * 1024^3 bytes)
-options(future.globals.maxSize = 100 * 1024^3)
-
-# --- 2. WORKER FUNCTION ------------------------------------------------------
+# --- Worker function ---------------------------------------------------------
 
 #' Compute cophenetic distances for a single gene vs. cell types
 process_gene <- function(gene,
@@ -24,7 +12,7 @@ process_gene <- function(gene,
   tryCatch({
     gene_coords <- coords_df[coords_df$feature_name == gene, ]
 
-    # ── Case 1: gene has no coordinates ──────────────────────────────────
+    # Case 1: gene has no coordinates.
     if (nrow(gene_coords) == 0) {
       if (!gene %in% rownames(celltype_coph_df)) {
         res <- as.data.frame(matrix(NA_real_,
@@ -39,7 +27,7 @@ process_gene <- function(gene,
       return(res)
     }
 
-    # ── Case 2: Recalculate gene ↔︎ cell types distances ───────────────
+    # Case 2: recalculate gene-to-cell-type distances.
     gene_coords_formatted <- data.frame(
       x        = gene_coords$x,
       y        = gene_coords$y,
@@ -66,7 +54,7 @@ process_gene <- function(gene,
   })
 }
 
-# --- 3. MAIN ANALYSIS FUNCTION ----------------------------------------------
+# --- Main analysis function --------------------------------------------------
 
 #' Transcript-by-cell spatial analysis with progress bar & forked parallelism
 #'
@@ -83,16 +71,19 @@ transcript_by_cell_analysis <- function(cell_metadata,
     output_folder <- file.path(".", paste0("t_by_c_", sample_name))
   if (!dir.exists(output_folder))
     dir.create(output_folder, recursive = TRUE)
+  old_future_size <- getOption("future.globals.maxSize")
+  options(future.globals.maxSize = 100 * 1024^3)
+  on.exit(options(future.globals.maxSize = old_future_size), add = TRUE)
 
   message("--- Loading and preparing data ---")
 
-  # ── Pre-processing ───────────────────────────────────────────────────
+  # Pre-process transcript coordinates.
   coords <- coords[!grepl("NegControl|Unassigned",
                           coords$feature_name, ignore.case = TRUE), ]
   cell_metadata_clean <- cell_metadata[, c("x", "y", "celltype")]
   genes <- sort(unique(coords$feature_name))
 
-  # ── Compute baseline celltype↔︎celltype distances ─────────────────────
+  # Compute baseline cell-type distances.
   message("--- Computing initial cell-type StructureMap ---")
   celltype_coph <- compute_cophenetic_distances_from_df(
     df          = cell_metadata_clean,
@@ -110,20 +101,24 @@ transcript_by_cell_analysis <- function(cell_metadata,
     sample          = sample_name
   )
 
-  write.csv(celltype_coph,
-            file.path(output_folder,
-                      paste0("StructureMap_table_", sample_name, ".csv")),
-            row.names = TRUE)
+  utils::write.csv(celltype_coph,
+                   file.path(output_folder,
+                             paste0("StructureMap_table_", sample_name, ".csv")),
+                   row.names = TRUE)
 
-  # ── Process each gene in parallel ─────────────────────────────────────
+  # Process each gene in parallel.
   message(sprintf("--- Forking %d workers to process %d genes ---",
                   n_jobs, length(genes)))
 
-  handlers("progress")  # CLI progress bar
+  progressr::handlers("progress")
   future::plan("multicore", workers = n_jobs)
-  on.exit(future::plan("sequential"), add = TRUE)  # Restore sequential processing on exit
+  on.exit(future::plan("sequential"), add = TRUE)
 
-  results_list <- with_progress({
+  coords_df <- coords
+  cell_metadata_df <- cell_metadata_clean
+  celltype_coph_df <- celltype_coph
+
+  results_list <- progressr::with_progress({
     p <- progressr::progressor(steps = length(genes))
 
     # --- START: MODIFIED SECTION ---
@@ -148,9 +143,9 @@ transcript_by_cell_analysis <- function(cell_metadata,
       future.globals   = list(
           p = p,
           process_gene = process_gene,
-          coords_df = coords,
-          cell_metadata_df = cell_metadata_clean,
-          celltype_coph_df = celltype_coph,
+          coords_df = coords_df,
+          cell_metadata_df = cell_metadata_df,
+          celltype_coph_df = celltype_coph_df,
           coph_method = coph_method
       )
     )
@@ -158,16 +153,16 @@ transcript_by_cell_analysis <- function(cell_metadata,
   })
   names(results_list) <- genes
 
-  # ── Combine and save results ──────────────────────────────────────────
+  # Combine and save results.
   message("--- Combining and saving final results ---")
   results_list <- Filter(Negate(is.null), results_list)
-  final_df <- do.call(rbind, results_list) |>  # 拼成大矩阵
+  final_df <- do.call(rbind, results_list) |>
               as.data.frame()
 
-  write.csv(final_df,
-            file = file.path(output_folder,
-                             paste0("t_and_c_result_", sample_name, ".csv")),
-            row.names = TRUE)
+  utils::write.csv(final_df,
+                   file = file.path(output_folder,
+                                    paste0("t_and_c_result_", sample_name, ".csv")),
+                   row.names = TRUE)
   message(paste("[DONE] Outputs saved to:", output_folder))
 }
 

@@ -61,7 +61,7 @@ compute_cophenetic_distances_from_df <- function(df,
   df_nearest_cluster_dist_df$cell_cluster <- clusters
 
   # Compute the mean distance to each cluster for each cell cluster
-  df_group_mean <- aggregate(
+  df_group_mean <- stats::aggregate(
     . ~ cell_cluster,
     data = df_nearest_cluster_dist_df,
     FUN = mean,
@@ -84,12 +84,12 @@ compute_cophenetic_distances_from_df <- function(df,
   }
 
   # Perform hierarchical clustering on rows and columns
-  row_linkage <- hclust(dist(df_group_mean_clean), method = method)
-  col_linkage <- hclust(dist(t(df_group_mean_clean)), method = method)
+  row_linkage <- stats::hclust(stats::dist(df_group_mean_clean), method = method)
+  col_linkage <- stats::hclust(stats::dist(t(df_group_mean_clean)), method = method)
 
   # Compute cophenetic distance matrices
-  row_cophenetic <- cophenetic(row_linkage)
-  col_cophenetic <- cophenetic(col_linkage)
+  row_cophenetic <- stats::cophenetic(row_linkage)
+  col_cophenetic <- stats::cophenetic(col_linkage)
 
   # Normalization helper function
   normalize_matrix <- function(mat) {

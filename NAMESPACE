@@ -1,1 +1,6 @@
-exportPattern("^[[:alpha:]]+")
+export(compute_cluster_average_nn_distance_matrix)
+export(compute_cluster_nn_distance_df)
+export(compute_cophenetic_distances_from_df)
+export(plot_cophenetic_heatmap)
+export(run_cellgpsr_app)
+export(transcript_by_cell_analysis)
