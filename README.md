@@ -1,6 +1,6 @@
-# sfplotR
+# cellgpsr
 
-`sfplotR` is an R package for spatial structure analysis and visualization in spatial transcriptomics data. It provides R implementations of the SFplot / Cell-GPS workflow used to compute cluster-level cophenetic structure matrices, generate StructureMap-style heatmaps, and analyze transcript-to-cell spatial relationships.
+`cellgpsr` is the R companion package for Cell-GPS spatial topology analysis in spatial transcriptomics data. It provides lightweight R implementations for computing cluster-level cophenetic structure matrices, generating StructureMap-style heatmaps, and analyzing transcript-to-cell spatial relationships.
 
 This repository is maintained as a reviewer-friendly code companion for the associated manuscript.
 
@@ -26,14 +26,14 @@ Install from GitHub with `remotes`:
 
 ```r
 install.packages("remotes")
-remotes::install_github("hutaobo/sfplotR")
+remotes::install_github("hutaobo/cellgpsr")
 ```
 
 Or install from a local clone:
 
 ```r
 install.packages("devtools")
-devtools::install("path/to/sfplotR")
+devtools::install("path/to/cellgpsr")
 ```
 
 The package targets R 4.3 or later.
@@ -41,7 +41,7 @@ The package targets R 4.3 or later.
 ## Minimal example
 
 ```r
-library(sfplotR)
+library(cellgpsr)
 
 df <- data.frame(
   x = c(0, 1, 5, 6),

@@ -14,7 +14,7 @@ cells$feature_name <- paste0("$\\textbf{", gsub(" ", "~", cells$feature_name), "
 df = rbind(transcript, cells)
 
 source("Y:/long/projects/NPC/rcode/compute_cophenetic_distances_from_df.R")
-source("Y:/long/projects/Pakagedevelopment/SpatialMap/sfplotR/R/plot_cophenetic_heatmap.R")
+source("Y:/long/projects/Pakagedevelopment/SpatialMap/cellgpsr/R/plot_cophenetic_heatmap.R")
 
 # 计算 cophenetic 距离
 result <- compute_cophenetic_distances_from_df(

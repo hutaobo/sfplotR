@@ -1,6 +1,6 @@
 # Reviewer Guide
 
-This repository contains the R package companion to the `sfplot` / Cell-GPS workflow described in the manuscript.
+This repository contains the `cellgpsr` R package companion to the Cell-GPS workflow described in the manuscript.
 
 ## Suggested reading order
 
@@ -23,7 +23,7 @@ This repository contains the R package companion to the `sfplot` / Cell-GPS work
 
 ```r
 install.packages("remotes")
-remotes::install_github("hutaobo/sfplotR")
+remotes::install_github("hutaobo/cellgpsr")
 ```
 
 ## Minimal input contract

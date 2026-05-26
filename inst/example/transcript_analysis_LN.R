@@ -10,7 +10,7 @@ cells <- cells %>%
 cells$group <- paste0("$\\textbf{", gsub(" ", "~", cells$group), "}$")
 
 source("/Volumes/mn-moldia/long/projects/NPC/rcode/compute_cophenetic_distances_from_df.R")
-source("/Volumes/mn-moldia/long/projects/Pakagedevelopment/CellGPS/sfplotR/R/plot_cophenetic_heatmap.R")
+source("/Volumes/mn-moldia/long/projects/Pakagedevelopment/Cell-GPS/cellgpsr/R/plot_cophenetic_heatmap.R")
 
 # 计算 cophenetic 距离
 result <- compute_cophenetic_distances_from_df(
@@ -61,7 +61,7 @@ matrix <- rbind(setNames(cells[, c("x_centroid","y_centroid","cell_id","group")]
                 setNames(df[, c("x_location","y_location","cell_id","feature_name")], c("x","y","cell_id","group")))
 
 source("/Volumes/mn-moldia/long/projects/NPC/rcode/compute_cophenetic_distances_from_df.R")
-source("/Volumes/mn-moldia/long/projects/Pakagedevelopment/SpatialMap/sfplotR/R/plot_cophenetic_heatmap.R")
+source("/Volumes/mn-moldia/long/projects/Pakagedevelopment/SpatialMap/cellgpsr/R/plot_cophenetic_heatmap.R")
 
 # 计算 cophenetic 距离
 result <- compute_cophenetic_distances_from_df(

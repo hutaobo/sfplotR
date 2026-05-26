@@ -1,7 +1,9 @@
-Package: sfplotR
+Package: cellgpsr
 Type: Package
-Title: Spatial Feature Plotting for Spatial Transcriptomics Data
+Title: Cell-GPS R Companion for Spatial Transcriptomics Data
 Version: 0.1.0
+Author: Taobo Hu [aut, cre], Mengping Long [aut], Mats Nilsson [aut]
+Maintainer: Taobo Hu <taobo.hu@scilifelab.se>
 Authors@R: 
     c(
         person("Taobo", "Hu", email = "taobo.hu@scilifelab.se", role = c("aut", "cre")),
@@ -9,8 +11,8 @@ Authors@R:
         person("Mats", "Nilsson", email = "mats.nilsson@scilifelab.se", role = "aut")
     )
 Description: Provides functions to compute cophenetic structure scores and generate
-    spatial feature plots for spatial transcriptomics datasets, including reviewer-facing
-    workflows accompanying the sfplot / Cell-GPS manuscript.
+    spatial topology visualizations for spatial transcriptomics datasets, including
+    reviewer-facing workflows accompanying the Cell-GPS manuscript.
 Depends:  
     R (>= 4.3)
 Imports:
@@ -32,5 +34,5 @@ Suggests:
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/hutaobo/sfplotR
-BugReports: https://github.com/hutaobo/sfplotR/issues
+URL: https://github.com/hutaobo/cellgpsr
+BugReports: https://github.com/hutaobo/cellgpsr/issues
